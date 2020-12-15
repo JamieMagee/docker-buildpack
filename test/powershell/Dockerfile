@@ -3,6 +3,8 @@ FROM ${IMAGE} as build
 
 RUN install-tool powershell 7.1.0
 
+RUN install-tool scoop 2020-11-26
+
 USER ubuntu
 
 RUN set -ex; \
