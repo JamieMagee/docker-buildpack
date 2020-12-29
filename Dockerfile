@@ -135,6 +135,12 @@ FROM base as powershell
 
 COPY src/powershell/ /usr/powershell/
 
+#--------------------------------------
+# Image: nix
+#--------------------------------------
+FROM base as nix
+
+COPY src/nix/ /usr/nix/
 
 #--------------------------------------
 # Image: full (latest)
@@ -154,6 +160,7 @@ COPY src/dotnet/ /usr/local/
 COPY src/swift/ /usr/local/
 COPY src/helm/ /usr/local/
 COPY src/powershell/ /usr/local/
+COPY src/nix/ /usr/local/
 
 
 #--------------------------------------
