@@ -18,6 +18,7 @@ installer_options=(
 
 curl -sSL https://nixos.org/releases/nix/nix-$NIX_VERSION/nix-$NIX_VERSION-x86_64-linux.tar.xz --output nix.txz
 tar xJf nix.txz
+rm nix.txz
 
 mkdir -m 0755 /nix
 chown ubuntu /nix
