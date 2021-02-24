@@ -1,44 +1,58 @@
 ARG IMAGE=renovate/buildpack
-FROM ${IMAGE} as build
+FROM ${IMAGE} as base
+
 
 RUN touch /.dummy
 
+WORKDIR /tmp
+COPY --chown=1000:0 test test
+
+FROM base as build
+
 # Python
+# renovate: datasource=github-releases lookupName=renovatebot/python
+RUN install-tool python 3.9.2
 
-# renovate: datasource=docker
-RUN install-tool python 3.8.3
 
-USER ubuntu
+FROM base as build-rootless
 
-COPY --chown=ubuntu:0 test test
+USER 1000
 
+# renovate: datasource=github-releases lookupName=renovatebot/python
+RUN install-tool python 3.9.2
 
 #--------------------------------------
 # build: pipenv
 #--------------------------------------
 FROM build as pipenv
 
-RUN pip install pipenv==2018.11.26
+# renovate: datasource=pypi
+RUN install-pip pipenv 2020.11.15
 
+
+USER 1000
 
 #--------------------------------------
 # build: poetry
 #--------------------------------------
 FROM build as poetry
 
-RUN pip install poetry==1.0.5
+# renovate: datasource=pypi
+RUN install-tool poetry 1.1.4
 
+USER 1000
 
 #--------------------------------------
 # test a: build
 #--------------------------------------
 FROM build as testa
 
-USER root
-
 # try install again, sould skip
-RUN install-tool python 3.8.3
+# renovate: datasource=github-releases lookupName=renovatebot/python
+RUN install-tool python 3.9.2
 
+# renovate: datasource=pypi
+RUN install-tool poetry 1.1.4
 
 #--------------------------------------
 # test b: pipenv
@@ -55,7 +69,10 @@ RUN set -ex; \
 #--------------------------------------
 FROM poetry as testc
 
-RUN RUN set -ex; cd test/c-poetry && poetry update --lock --no-interaction
+RUN set -ex; cd test/c-poetry && poetry update --lock --no-interaction
+
+
+RUN set -ex; cd test/c-poetry && poetry add h3py
 
 
 #--------------------------------------
@@ -81,6 +98,48 @@ RUN set -ex; \
   poetry update --lock --no-interaction; \
   git status -s;
 
+#--------------------------------------
+# test f: pip_requirements
+#--------------------------------------
+FROM build as testf
+
+RUN pip install hashin
+
+RUN set -ex; \
+  cd test/f; \
+  hashin distribute==0.6.27; \
+  cat requirements.txt
+
+#--------------------------------------
+# test g: non-root
+#--------------------------------------
+FROM build-rootless as testg
+
+# renovate: datasource=pypi
+RUN install-pip pipenv 2020.11.15
+
+RUN set -ex; \
+  cd test/a; \
+  pipenv lock;
+
+# renovate: datasource=pypi
+RUN install-tool poetry 1.1.4
+
+RUN set -ex \
+  && cd test/c-poetry \
+  && poetry update --lock --no-interaction \
+  && poetry add h3py \
+  ;
+
+# renovate: datasource=pypi
+RUN install-pip hashin 0.15.0
+
+RUN set -ex \
+  && cd test/f \
+  && hashin distribute==0.6.27 \
+  && cat requirements.txt \
+  ;
+
 
 #--------------------------------------
 # final
@@ -92,3 +151,5 @@ COPY --from=testb /.dummy /.dummy
 COPY --from=testc /.dummy /.dummy
 COPY --from=testd /.dummy /.dummy
 COPY --from=teste /.dummy /.dummy
+COPY --from=testf /.dummy /.dummy
+COPY --from=testg /.dummy /.dummy
