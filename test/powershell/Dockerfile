@@ -1,11 +1,12 @@
 ARG IMAGE=renovate/buildpack
 FROM ${IMAGE} as build
 
-RUN install-tool powershell 7.1.0
+# renovate: datasource=github-releases lookupName=PowerShell/PowerShell
+RUN install-tool powershell v7.1.2
 
 RUN install-tool scoop 2020-11-26
 
-USER ubuntu
+USER 1000
 
 RUN set -ex; \
   pwsh -Version
